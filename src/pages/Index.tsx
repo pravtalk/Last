@@ -238,7 +238,8 @@ const Index = () => {
             className="rounded-full shadow-lg hover:shadow-xl text-xs sm:text-sm px-3 sm:px-4"
             onClick={() => {
               if (user) {
-                navigate('/practice');
+                // Open practice.vercel.app in the same window/app
+                window.location.href = 'https://practice.vercel.app';
               } else {
                 navigate('/auth');
               }

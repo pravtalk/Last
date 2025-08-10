@@ -2,7 +2,8 @@ import { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, SkipBack, SkipForward } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Play, Pause, Volume2, VolumeX, Maximize, Minimize, SkipBack, SkipForward, Settings } from 'lucide-react';
 import Hls from 'hls.js';
 
 interface VideoPlayerProps {
@@ -31,6 +32,8 @@ const VideoPlayer = ({
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [selectedQuality, setSelectedQuality] = useState<string>('auto');
+  const [availableQualities, setAvailableQualities] = useState<Array<{level: number, height: number, width: number}>>([]);
   const videoRef = useRef<HTMLVideoElement>(null);
   const videoContainerRef = useRef<HTMLDivElement>(null);
   const hlsRef = useRef<Hls | null>(null);
@@ -108,6 +111,19 @@ const VideoPlayer = ({
     };
   }, []);
 
+  // Handle quality change for HLS streams
+  const handleQualityChange = (quality: string) => {
+    setSelectedQuality(quality);
+    if (hlsRef.current) {
+      if (quality === 'auto') {
+        hlsRef.current.currentLevel = -1; // Auto quality
+      } else {
+        const levelIndex = parseInt(quality);
+        hlsRef.current.currentLevel = levelIndex;
+      }
+    }
+  };
+
   // Initialize HLS player
   useEffect(() => {
     if (videoType === 'hls' && videoRef.current && videoUrl) {
@@ -123,6 +139,13 @@ const VideoPlayer = ({
         
         hls.on(Hls.Events.MANIFEST_PARSED, () => {
           console.log('HLS manifest loaded');
+          // Get available quality levels
+          const levels = hls.levels.map((level, index) => ({
+            level: index,
+            height: level.height,
+            width: level.width
+          }));
+          setAvailableQualities(levels);
         });
         
         hls.on(Hls.Events.ERROR, (event, data) => {
@@ -258,11 +281,39 @@ const VideoPlayer = ({
 
           {/* Video Controls */}
           <div className="flex flex-col sm:flex-row gap-3 sm:items-center justify-between">
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               {duration && (
                 <span className="text-sm text-muted-foreground">
                   Duration: {Math.floor(duration / 60)}:{(duration % 60).toString().padStart(2, '0')} min
                 </span>
+              )}
+              
+              {/* Quality Selector for HLS and Direct Videos */}
+              {(videoType === 'hls' || videoType === 'direct') && (
+                <div className="flex items-center gap-2">
+                  <Settings className="h-4 w-4 text-muted-foreground" />
+                  <Select value={selectedQuality} onValueChange={handleQualityChange}>
+                    <SelectTrigger className="w-[120px] h-8">
+                      <SelectValue placeholder="Quality" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="auto">Auto</SelectItem>
+                      {videoType === 'hls' && availableQualities.map((quality) => (
+                        <SelectItem key={quality.level} value={quality.level.toString()}>
+                          {quality.height}p
+                        </SelectItem>
+                      ))}
+                      {videoType === 'direct' && (
+                        <>
+                          <SelectItem value="1080">1080p</SelectItem>
+                          <SelectItem value="720">720p</SelectItem>
+                          <SelectItem value="480">480p</SelectItem>
+                          <SelectItem value="360">360p</SelectItem>
+                        </>
+                      )}
+                    </SelectContent>
+                  </Select>
+                </div>
               )}
             </div>
             
