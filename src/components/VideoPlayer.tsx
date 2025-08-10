@@ -263,25 +263,8 @@ const VideoPlayer = ({
 
   // Get available quality options based on video type
   const getAvailableQualityOptions = () => {
-    const options = [{ value: 'auto', label: 'Auto' }];
-    
-    if (videoType === 'hls' && availableQualities.length > 0) {
-      // Use actual available qualities from HLS stream
-      availableQualities.forEach(quality => {
-        const label = `${quality.height}p${quality.height >= 720 ? ' HD' : ''}`;
-        options.push({ value: quality.level.toString(), label });
-      });
-    } else {
-      // Use standard quality options, ensuring 720p and 480p are available
-      const standardQualities = ['1080', '720', '480', '360', '240'];
-      standardQualities.forEach(quality => {
-        const height = parseInt(quality);
-        const label = `${quality}p${height >= 720 ? ' HD' : ''}`;
-        options.push({ value: quality, label });
-      });
-    }
-    
-    return options;
+    // Always return all standard quality options to ensure 720p and 480p are available
+    return QUALITY_OPTIONS;
   };
 
   return (
